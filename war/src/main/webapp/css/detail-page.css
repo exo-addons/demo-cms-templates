@@ -1,19 +1,19 @@
-.RightBodyTDContainer .UIContainer {
+.UISingleContentViewerPortlet {
     padding: 55px 25px;
 }
 
-.UIPresentationContainer {
+.demoPresentation {
     background-color: white;
     border-radius: 10px 10px 10px 10px;
     padding: 25px;
 }
 
-.UISingleContentViewerPortlet .UIPresentationContainer .uiOptionBar {
+.UISingleContentViewerPortlet .demoPresentation .uiOptionBar {
     margin-right: 1270px;
     margin-left: 10px;
 }
 
-.UISingleContentViewerPortlet .UIPresentationContainer .title {
+.UISingleContentViewerPortlet .demoPresentation .title {
     text-align: center;
     padding: 20px;
     font-weight: bold;
@@ -26,14 +26,14 @@
     margin-top: 50px;
 }
 
-.UISingleContentViewerPortlet .UIPresentationContainer .dateAndMail {
+.UISingleContentViewerPortlet .demoPresentation .dateAndMail {
     text-align: right;
     font-style: italic;
     margin-left: 50px;
     margin-right: 50px;
 }
 
-.webContentContainer {
+.demoPresentation .webContentContainer {
     padding-top: 12px;
     padding-bottom: 12px;
     padding-left: 12px;

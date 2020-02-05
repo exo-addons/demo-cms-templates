@@ -1,0 +1,698 @@
+diff --git a/war/src/main/webapp/WEB-INF/conf/configuration.xml b/war/src/main/webapp/WEB-INF/conf/configuration.xml
+index 90cf557..0e2aa5d 100644
+--- a/war/src/main/webapp/WEB-INF/conf/configuration.xml
++++ b/war/src/main/webapp/WEB-INF/conf/configuration.xml
+@@ -22,7 +22,6 @@
+ 
+ <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
+                xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
+-   <import>war:/conf/demo-pages/portal-configuration.xml</import>
+    <import>war:/conf/wcm/application-templates-configuration.xml</import>
+    <!--<import>war:/conf/wcm/deployment-configuration.xml</import>
+    <import>war:/conf/wcm/nodetypes-configuration.xml</import>-->
+diff --git a/war/src/main/webapp/WEB-INF/conf/wcm/application-templates-configuration.xml b/war/src/main/webapp/WEB-INF/conf/wcm/application-templates-configuration.xml
+index 2adb1c8..de1cde2 100644
+--- a/war/src/main/webapp/WEB-INF/conf/wcm/application-templates-configuration.xml
++++ b/war/src/main/webapp/WEB-INF/conf/wcm/application-templates-configuration.xml
+@@ -102,7 +102,7 @@
+ 							<string>CMS LINKS Template</string>
+ 						</field>
+ 						<field name="templateName">
+-							<string>cmsTemplateslinks.gtmpl</string>
++							<string>cmsTemplatesLinks.gtmpl</string>
+ 						</field>
+ 						<field name="category">
+ 							<string>list</string>
+diff --git a/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/cmsTemplatesBlog.gtmpl b/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/cmsTemplatesBlog.gtmpl
+new file mode 100644
+index 0000000..9c0c52d
+--- /dev/null
++++ b/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/cmsTemplatesBlog.gtmpl
+@@ -0,0 +1,225 @@
++<%
++	 	import javax.jcr.Node;
++
++	 	import org.exoplatform.wcm.webui.paginator.UICustomizeablePaginator;
++	 	import org.exoplatform.wcm.webui.clv.UICLVPortlet;
++	 	import org.exoplatform.wcm.webui.Utils;
++	 	import org.exoplatform.services.wcm.core.NodeLocation;
++	 	import org.exoplatform.services.jcr.core.ManageableRepository;
++	 	import org.exoplatform.webui.application.WebuiRequestContext;
++	 	import org.exoplatform.services.wcm.utils.WCMCoreUtils;
++	 	import org.exoplatform.services.cms.comments.CommentsService;
++
++	 	def propertyName = "exo:title";
++	 	def repo = "";
++	 	def workspace = "";
++	 	def uuid = "";
++
++	 	def siteName = org.exoplatform.portal.webui.util.Util.getPortalRequestContext().getPortalOwner();
++	 	Locale locale = WebuiRequestContext.getCurrentInstance().getLocale();
++	 	def language = locale.getLanguage();
++	 	def draftMsg = _ctx.appRes("PublicationStates.draft");
++	 	def publishedMsg = _ctx.appRes("PublicationStates.published");
++	 	def commentService = WCMCoreUtils.getService(CommentsService.class);
++	 	%>
++        <style>
++			.blogImage {
++    		   width: 40%;
++             }
++             .blogDate {
++               margin: 5px 0 5px;
++             }
++		</style>
++	 	<div class="documentsCLVTemplate" id="$uicomponent.id">
++
++	 	<div class="clv uiBox blogListBox">
++	 	<%
++	 	def header = uicomponent.getHeader();
++	 	def rssLink = uicomponent.getRssLink();
++	 	def isShowRssLink = uicomponent.isShowRssLink();
++	 	def isShowHeader = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_HEADER) && header != null && header.trim().length() != 0;
++	 	%>
++	 	<%
++	 	if (isShowHeader || isShowRssLink) {
++	 		%>
++	 		<h5 class="title">
++	 		<%if (isShowRssLink) {
++	 			%><a class="rssIcon pull-right" onclick="javascript:window.open('$rssLink');" style="cursor:pointer" rel="tooltip" data-placement="bottom" title="<%= _ctx.appRes("UICLVPresentation.label.rssFeed") %>"><i class="uiIconRss uiIconLightGray">&nbsp;</i></a><%
++	 		}
++	 		if(isShowHeader) {%> <span>$header</span><%}%>
++	 			</h5>
++	 		<%
++	 	}
++	 	%>
++	 	<%
++	 	if (uicomponent.getUIPageIterator().getAvailable() == 0) {
++	 		%>
++	 		<div class="emptyContent">
++	 		<span><%= _ctx.appRes(uicomponent.getParent().getMessageKey()) %></span>
++	 		</div>
++	 		<%
++	 	} else {
++	 		def currentPageData = uicomponent.getCurrentPageData();
++	 		def i=0;
++	 		%>
++	 		<div class="uiContentBox">
++	 		<%
++	 		for (viewNode in currentPageData) {
++	 			if(!Utils.isViewable(viewNode)) continue;
++	 			i++;
++	 			def isShowTitle = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_TITLE);
++	 			def isShowDate = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_DATE_CREATED);
++	 			def isShowLink = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_LINK);
++	 			def isShowReadmore = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_READMORE);
++
++	 			def itemLink = uicomponent.getURL(viewNode);
++	 			def itemWebdavLink = uicomponent.getWebdavURL(viewNode);
++	 			uicomponent.setDateTimeFormat("dd/MMM/yyyy");
++	 			def itemDateCreated = uicomponent.getCreatedDate(viewNode);
++	 			int slashIndex1 = itemDateCreated.indexOf('/');
++	 			int slashIndex2 = itemDateCreated.lastIndexOf('/');
++	 			def itemCreatedDay = itemDateCreated.substring(0, slashIndex1);
++	 			def itemCreatedMonth = itemDateCreated.substring(slashIndex1 + 1, slashIndex2);
++	 			def itemOwner = uicomponent.getAuthor(viewNode);
++
++	 			def imgSrc = uicomponent.getIllustrativeImage(viewNode);
++	 			def isShowImage = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_ILLUSTRATION) && imgSrc != null;
++
++	 			def itemName = viewNode.getName();
++	 			def itemTitle = uicomponent.getTitle(viewNode);
++	 			if (itemTitle != null && itemTitle.trim().length() != 0)
++	 				itemName = itemTitle;
++
++	 			def itemSummary = uicomponent.getSummary(viewNode);
++	 			def itemSummaryField = uicomponent.getSummaryField(viewNode);
++	 			def isShowSummary = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_SUMMARY) && itemSummary != null;
++
++	 			def itemIcon = uicomponent.getContentIcon(viewNode);
++
++	 			repo = ((ManageableRepository)viewNode.getSession().getRepository()).getConfiguration().getName();
++	 			workspace = viewNode.getSession().getWorkspace().getName();
++	 			uuid = viewNode.getUUID();
++	 			def commentCount = commentService.getComments(viewNode, null).size();
++
++	 			%>
++	 			<%=uicomponent.addQuickEditDiv("Column1 media " + ((i%2==1)?"odd":"even"),, viewNode)%>
++
++	 			<div class="media-inner">
++	 			<%
++	 			if (isShowImage) {
++	 				%><div class="blogImage"><a class="image pull-left img-polaroid" title="$itemName"><img alt="$itemName" rel="tooltip" data-placement="bottom" title="$itemName" src="$imgSrc" /></a></div><%
++	 			}
++	 			%>
++
++	 			<div class="media-body">
++	 				<div class="clearfix blogTitle">
++	 				<div class="badge">
++	 				<p class="blogDate">
++	 					<span><time datetime="2013-01-01">$itemCreatedDay</time></span><span class="numb">$itemCreatedMonth</span>
++	 				</p>
++	 				</div>
++	 				<div class="extra-wrap">
++	 					<%
++
++				 			if (uicomponent.isViewMode()){
++				 				if (isShowTitle) {
++				 					%><%
++				 					if (isShowLink) {
++				 						%><h3 class=""><a href="$itemLink" rel="tooltip" data-placement="bottom" title="$itemName" class="blogTitleLink">$itemName</a></h3><%
++				 					} else {
++				 						%>
++				 						<h3 class="">
++				 						<% print uicomponent.getInlineEditingField(viewNode, "exo:title", itemName, "TEXT", "CLVTitle_"+String.valueOf(i), "GroovyCLVTitle", true, "button_direction=left-to-right","fast_publish=" + uicomponent.getFastPublicLink(viewNode));%>
++				 						</h3>
++				 						<%
++				 					}
++				 				}
++				 			}
++				 			else {
++				 				if (isShowTitle) {
++				 					%><%
++				 					if (isShowLink) {
++				 						%><h3 class=" WCMInlineEditable" contenteditable="true" propertyName="<%=propertyName%>" repo="<%=repo%>" workspace="<%=workspace%>" uuid="<%=uuid%>" siteName="<%=siteName%>" language="<%=language%>" publishedmsg="<%=publishedMsg%>" draftmsg="<%=draftMsg%>" fastpublishlink="<%=uicomponent.getFastPublicLink(viewNode)%>"><a href="$itemLink" rel="tooltip" data-placement="bottom" title="$itemName">$itemName</a></h3><%
++				 					} else {
++				 						%>
++				 						<h3 class=" WCMInlineEditable" contenteditable="true" propertyName="<%=propertyName%>" repo="<%=repo%>" workspace="<%=workspace%>" uuid="<%=uuid%>" siteName="<%=siteName%>" language="<%=language%>" publishedmsg="<%=publishedMsg%>" draftmsg="<%=draftMsg%>" fastpublishlink="<%=uicomponent.getFastPublicLink(viewNode)%>">
++				 						<% print uicomponent.getInlineEditingField(viewNode, "exo:title", itemName, "TEXT", "CLVTitle_"+String.valueOf(i), "GroovyCLVTitle", true, "button_direction=left-to-right","fast_publish=" + uicomponent.getFastPublicLink(viewNode)); %>
++				 						</h3>
++				 						<%
++				 					}
++				 				}
++				 			}
++
++				 			%>
++			 	<div class="blogInformations">
++ 							<p class="blogAuthor"><i class="uiIconProfile uiIconDefaultApp"></i> <span>Posted by:&nbsp;</span> <a href="#">$itemOwner</a></p>
++ 							<p class="blogNbrComments"><i class="uiIconAppforum uiIconAppForumPortlet uiIconDefaultApp"></i> <a href="#">$commentCount Comment(s)</a></p>
++			 	</div>
++
++				 		</div>
++				 	</div>
++
++
++	 			<%
++
++	 			if (isShowDate) {
++	 				%><div class="dateAndMail">$itemDateCreated</div><%
++	 			}
++	 			if (isShowSummary) {
++	 				%><div class="summary margBot3" id="Blogexcerpt">
++	 				<%
++	 				if (itemSummaryField!=null) {
++	 					print uicomponent.getInlineEditingField(viewNode, itemSummaryField, itemSummary, "TEXTAREA", "Text_"+String.valueOf(i), "CLV1ColumnPresent", true,"fast_publish=" + uicomponent.getFastPublicLink(viewNode));
++	 				}
++	 				%>
++	 				</div>
++	 				<%
++	 			}%>
++
++	 			<%
++	 			if (isShowReadmore) {
++	 				%>
++
++	 				<div class="readLink blog-read-more">
++	 				<a class="blog-button" href="$itemLink" data-placement="bottom" title="<%= _ctx.appRes("UICLVPresentation.label.readmore") %>">
++	 				<span><%= _ctx.appRes("UICLVPresentation.label.readmore") %></span>
++	 				</a>
++
++	 				</div><%
++	 			}
++	 			%>
++	 			</div><!--media-body-->
++	 			</div><!--media-inner-->
++	 			</div>
++	 			<%
++	 		}
++	 		%>
++
++	 		<%
++	 		String labelRefreshAction = _ctx.appRes("UICLVPresentation.action.refresh");
++	 		def isShowRefresh = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_REFRESH_BUTTON);
++	 		if (isShowRefresh) { %>
++	 			<div class="captionFunc clearfix">
++	 			<%	String link = uicomponent.event("Refresh");
++	 			%>
++	 			<div class="captionRefresh pull-left">
++	 			<a href="$link"  class="btn" rel="tooltip" data-placement="bottom" title="$labelRefreshAction"></a>
++	 			</div>
++	 			</div>
++	 			<%
++	 		}
++	 		if (uicomponent.showPaginator()) { %>
++	 			<div class="paginatorDefault">
++	 			<%	uicomponent.renderChild(UICustomizeablePaginator.class); %>
++	 			</div>
++	 			<%
++	 		}
++	 		%>
++
++	 		</div><!--uiContentBox-->
++	 		<%
++	 	}
++	 	%>
++	 	</div>
++	 	</div>
++	
+\ No newline at end of file
+diff --git a/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/cmsTemplateLinks.gtmpl b/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/cmsTemplatesLinks.gtmpl
+similarity index 100%
+rename from war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/cmsTemplateLinks.gtmpl
+rename to war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/cmsTemplatesLinks.gtmpl
+diff --git a/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/news-slider.gtmpl b/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/news-slider.gtmpl
+index 19bac26..de0e40a 100644
+--- a/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/news-slider.gtmpl
++++ b/war/src/main/webapp/WEB-INF/conf/wcm/application-templates/content-list-viewer/list/news-slider.gtmpl
+@@ -6,24 +6,6 @@
+     import org.exoplatform.services.wcm.core.NodeLocation;
+ %>
+ 
+-<script>
+-
+-	require(['SHARED/jquery', 'SHARED/dotdotdot'], function (jQuery, dotdotdot) {
+-		jQuery(document).ready(function () {
+-			jQuery(".contentTitle").dotdotdot();
+-			jQuery(".contentBodyText").dotdotdot();
+-			jQuery(".rightTitle").dotdotdot();
+-			jQuery(".rightBody").dotdotdot();
+-		});
+-
+-		jQuery(window).resize(function () {
+-			jQuery(".contentTitle").dotdotdot();
+-			jQuery(".contentBodyText").dotdotdot();
+-			jQuery(".rightTitle").dotdotdot();
+-			jQuery(".rightBody").dotdotdot();
+-		})
+-	});
+-</script>
+ <style>.news-contentLeft {
+     margin: 0 10px;
+     transition: all 1s ease;
+@@ -394,40 +376,40 @@ def isShowHeader = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_HEADER)
+ 	<div class="news-content">
+ 
+ 		<%
+-if (uicomponent.getUIPageIterator().getAvailable() == 0) {
+-%>
++    if (uicomponent.getUIPageIterator().getAvailable() == 0) {
++    %>
+ 		<div class="emptyContent">
+ 			<span><%= _ctx.appRes(uicomponent.getParent().getMessageKey()) %></span>
+ 		</div>
+ 		<%
+-} else {
+-  def currentPageData = uicomponent.getCurrentPageData();
+-  def nodes = new ArrayList();
++    } else {
++    def currentPageData = uicomponent.getCurrentPageData();
++    def nodes = new ArrayList();
+     for (viewNode in currentPageData) {
+         if(!Utils.isViewable(viewNode)) continue;
+         nodes.add(viewNode);
+     }
+ 
+-  def style = "";
+-  def isShowTitle = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_TITLE);
+-  def isShowDate = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_DATE_CREATED);
+-  def isShowLink = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_LINK);
+-  def isShowReadmore = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_READMORE);
++	def style = "";
++	def isShowTitle = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_TITLE);
++	def isShowDate = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_DATE_CREATED);
++	def isShowLink = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_LINK);
++    def isShowReadmore = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_READMORE);
+ 
+-def itemLink_0 = uicomponent.getURL(nodes.get(0));
+-def itemDateCreated_0 = uicomponent.getCreatedDate(nodes.get(0));
+-def itemOwner_0 = uicomponent.getAuthor(nodes.get(0));
++	def itemLink_0 = uicomponent.getURL(nodes.get(0));
++	def itemDateCreated_0 = uicomponent.getCreatedDate(nodes.get(0));
++	def itemOwner_0 = uicomponent.getAuthor(nodes.get(0));
+ 
+-def imgSrc_0 = uicomponent.getIllustrativeImage(nodes.get(0));
+-def isShowImage_0 = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_ILLUSTRATION) && imgSrc_0 != null;
++	def imgSrc_0 = uicomponent.getIllustrativeImage(nodes.get(0));
++	def isShowImage_0 = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_ILLUSTRATION) && imgSrc_0 != null;
+ 
+-def itemName_0 = nodes.get(0).getName();
+-def itemTitle_0 = uicomponent.getTitle(nodes.get(0));
+-if (itemTitle_0 != null && itemTitle_0.trim().length() != 0)
+-  itemName_0 = itemTitle_0;
+-def itemSummary_0 = uicomponent.getSummary(nodes.get(0));
+-def itemSummaryField_0 = uicomponent.getSummaryField(nodes.get(0));
+-def isShowSummary_0 = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_SUMMARY) && itemSummary_0 != null;
++	def itemName_0 = nodes.get(0).getName();
++	def itemTitle_0 = uicomponent.getTitle(nodes.get(0));
++	if (itemTitle_0 != null && itemTitle_0.trim().length() != 0)
++	  itemName_0 = itemTitle_0;
++	def itemSummary_0 = uicomponent.getSummary(nodes.get(0));
++	def itemSummaryField_0 = uicomponent.getSummaryField(nodes.get(0));
++	def isShowSummary_0 = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_SUMMARY) && itemSummary_0 != null;
+ 
+     %>
+ 
+@@ -460,26 +442,23 @@ def isShowSummary_0 = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_SUMMA
+ 			</div>
+ 		</div>
+ 		<div class="news-contentRight">
+-			<% for (int i=1;i<nodes.size();i++) {
+-def viewNode = nodes.get(i);
+-        def itemLink = uicomponent.getURL(viewNode);
+-        def itemDateCreated = uicomponent.getCreatedDate(viewNode);
+-        def itemOwner = uicomponent.getAuthor(viewNode);
+-
+-        def imgSrc = uicomponent.getIllustrativeImage(viewNode);
+-        def isShowImage = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_ILLUSTRATION) && imgSrc != null;
+-
+-        def itemName = viewNode.getName();
+-        def itemTitle = uicomponent.getTitle(viewNode);
+-          if (itemTitle != null && itemTitle.trim().length() != 0)
+-            itemName = itemTitle;
+-        def itemSummary = uicomponent.getSummary(viewNode);
+-        def itemSummaryField = uicomponent.getSummaryField(viewNode);
+-        def isShowSummary = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_SUMMARY) && itemSummary != null;
+-
+-
+-
+-      %>
++			<% for (int i=1;i < nodes.size();i++) {
++				def viewNode = nodes.get(i);
++				def itemLink = uicomponent.getURL(viewNode);
++				def itemDateCreated = uicomponent.getCreatedDate(viewNode);
++				def itemOwner = uicomponent.getAuthor(viewNode);
++
++				def imgSrc = uicomponent.getIllustrativeImage(viewNode);
++				def isShowImage = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_ILLUSTRATION) && imgSrc != null;
++
++				def itemName = viewNode.getName();
++				def itemTitle = uicomponent.getTitle(viewNode);
++				  if (itemTitle != null && itemTitle.trim().length() != 0)
++					itemName = itemTitle;
++				def itemSummary = uicomponent.getSummary(viewNode);
++				def itemSummaryField = uicomponent.getSummaryField(viewNode);
++				def isShowSummary = uicomponent.isShowField(UICLVPortlet.PREFERENCE_SHOW_SUMMARY) && itemSummary != null;
++            %>
+ 
+ 			<div class="news-line">
+ 				<div class="news-image" style="background-image:url($imgSrc)">
+diff --git a/war/src/main/webapp/WEB-INF/gatein-resources.xml b/war/src/main/webapp/WEB-INF/gatein-resources.xml
+index 983cbef..d8332f3 100644
+--- a/war/src/main/webapp/WEB-INF/gatein-resources.xml
++++ b/war/src/main/webapp/WEB-INF/gatein-resources.xml
+@@ -1,14 +1,13 @@
+ <?xml version="1.0" encoding="ISO-8859-1" ?>
+ 
+ <gatein-resources
+-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+-	xsi:schemaLocation="http://www.gatein.org/xml/ns/gatein_resources_1_3 http://www.gatein.org/xml/ns/gatein_resources_1_3"
+-	xmlns="http://www.gatein.org/xml/ns/gatein_resources_1_3">
++		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++		xsi:schemaLocation="http://www.gatein.org/xml/ns/gatein_resources_1_3 http://www.gatein.org/xml/ns/gatein_resources_1_3"
++		xmlns="http://www.gatein.org/xml/ns/gatein_resources_1_3">
+ 	<portal-skin>
+-		<skin-name>${exo.skin.name}</skin-name>
+-		<skin-module>customModule</skin-module>
++		<skin-name>Enterprise</skin-name>
++		<skin-module>detailPageModule</skin-module>
+ 		<css-path>/css/detail-page.css</css-path>
+-		<css-priority>0</css-priority>
+ 	</portal-skin>
+ 
+-</gatein-resources>
+\ No newline at end of file
++</gatein-resources>
+diff --git a/war/src/main/webapp/WEB-INF/notification/templates/mail/postUpdateStatePlugin.gtmpl b/war/src/main/webapp/WEB-INF/notification/templates/mail/postUpdateStatePlugin.gtmpl
+deleted file mode 100644
+index a8f53bf..0000000
+--- a/war/src/main/webapp/WEB-INF/notification/templates/mail/postUpdateStatePlugin.gtmpl
++++ /dev/null
+@@ -1,177 +0,0 @@
+-<table border="0" cellpadding="0" cellspacing="0" width="600" bgcolor="#ffffff" align="center"
+-	   style="background-color: #ffffff; font-size: 13px;color:#333333;line-height: 18px;font-family: HelveticaNeue, Helvetica, Arial, sans-serif;"
+-	   xmlns="http://www.w3.org/1999/html">
+-<tr>
+-<td align="center"  valign="middle" >
+-<table  cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" align="center" style="border:1px solid #d8d8d8;">
+-<tr>
+-<td  height="45" valign="middle" style="margin:0;height:45px;font-weight:bold;vertical-align:middle;;background-color: #efefef;font-family: 'HelveticaNeue Bold', Helvetica, Arial, sans-serif;color:#2f5e92;font-size:18px;text-align:center">
+-<a href="#" style="text-decoration: none; color: #2f5e92; font-family: 'HelveticaNeue Bold', Helvetica, Arial, sans-serif; font-size: 18px;">
+-<%=_ctx.appRes("Notification.title.PostUpdateStatePlugin")%>
+-</a>
+-						</td>
+-</tr>
+-				</table>
+-</td>
+-		</tr><!--end header area-->
+-<tr>
+-<td bgcolor="#ffffff" style="background-color: #ffffff;">
+-<table cellpadding="0" cellspacing="0" width="100%"  bgcolor="#ffffff" style="background-color: #ffffff; border-left:1px solid #d8d8d8;border-right:1px solid #d8d8d8;">
+-<tr>
+-<td bgcolor="#ffffff" style="background-color: #ffffff;">
+-<table border="0" cellpadding="0" cellspacing="0" width="92%" bgcolor="#ffffff" align="center" style="background-color: #ffffff; font-size: 13px;color:#333333;line-height: 18px;">
+-<tr>
+-<td align="left" bgcolor="#ffffff" style="background-color: #ffffff;padding: 20px 0 10px;">
+-<p style="margin: 0 0 10px; color: #333333; font-size: 13px; line-height: 18px;">
+-<%=_ctx.appRes("Notification.label.SayHello")%> $FIRST_NAME,
+-</p>
+-	<table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" align="center" style="background-color: #ffffff; font-size: 13px;color:#333333;line-height: 18px;"><tbody><tr><td align="left" style="padding: 0;"><table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" align="center" style="width: 100%; background-color: #ffffff; font-size: 13px; color:#333333;line-height: 18px;">
+-	<tr>
+-	<td align="left" valign="top" bgcolor="#ffffff" style="vertical-align: top; background-color: #ffffff; padding: 0 15px 0 0;">
+-		<a href="#" style="margin: 4px 0 0; padding: 0; display: block;">
+-<img style="border-radius: 4px;" height="76" width="76" src="$AVATAR" alt="$USER" />
+-</a>
+-																</td>
+-<td align="left" bgcolor="#ffffff" width="90%" align="top" style="width: 90%; background-color: #ffffff; padding: 0 0; vertical-align: top;">
+-<p style="margin: 0 0 10px; color: #333333; font-size: 13px; line-height: 18px;">
+-<%
+-String profileUrl = "<a style=\"text-decoration: none; color: #2f5e92; font-family: 'HelveticaNeue Bold', Helvetica, Arial, sans-serif\" href=\""+ PROFILE_URL + "\"><strong>" + USER + "</strong></a>";
+-String creator = "<span style=\"text-decoration: none; color: #2f5e92; font-family: 'HelveticaNeue Bold', Helvetica, Arial, sans-serif\"><strong>" + CONTENT_UPDATER + "</strong></span>";
+-def description = "";
+-
+-
+-
+-
+-       if(CONTENT_STATUS.equals("published")) {
+-       description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.published",CONTENT_TITLE,creator);
+-} else if (CONTENT_STATUS.equals("pending")) {
+-   description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.request.approval.mail",creator, CONTENT_TITLE);
+-} else if (CONTENT_STATUS.equals("approved")) {
+-   description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.approved.mail",creator, CONTENT_TITLE);
+-} else if (CONTENT_STATUS.equals("staged")) {
+-   description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.staged",CONTENT_TITLE);
+-} else {
+-   description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.created",creator, CONTENT_TITLE);
+-}
+-def msg = _ctx.appRes("Notification.message.PostUpdateStatePlugin",CONTENT_TITLE);
+-
+-%>
+-
+-</p>
+-	<table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f9f9f9" align="center" style="margin:0 0 10px; width: 100%; background-color: #f9f9f9; font-size: 13px; color:#333333;line-height: 18px;">
+-	<tr>
+-	<td align="left" valign="top" bgcolor="#f9f9f9" style="vertical-align: top; background-color: #f9f9f9; padding: 10px 15px;">
+-	<p style="margin: 0 0 10px; color: #333333; font-size: 13px; line-height: 18px;">
+-	<a href="#" style="text-decoration: none; color: #2f5e92; font-family: 'HelveticaNeue Bold', Helvetica, Arial, sans-serif">
+-</a>
+-</p>
+-<p style="margin: 0; color: #333333; font-size: 13px; line-height: 18px;">
+-		<%=description%>
+-</p>
+-</td>
+-</tr>
+-<tr>
+-
+-<td align="left" valign="top" bgcolor="#ffffff" style="vertical-align: top; background-color: #ffffff; padding: 10px 0 0">
+-<p style="margin: 0">
+-<!-- <a target="_blank" style="
+-display: inline-block;
+-text-decoration: none;
+-font-size: 11px;
+-font-family: 'HelveticaNeue Bold', Helvetica, Arial, sans-serif;
+-color: #ffffff;
+-
+-background-color: #567ab6;
+-background-image: -moz-linear-gradient(top, #638acd, #426393);
+-background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#638acd), to(#426393));
+-background-image: -webkit-linear-gradient(top, #638acd, #426393);
+-background-image: -o-linear-gradient(top, #638acd, #426393);
+-background-image: linear-gradient(to bottom, #638acd, #426393);
+-background-repeat: repeat-x;
+-border-radius: 4px;
+--moz-border-radius: 4px;
+-padding: 5px 8px;
+-line-height: 100%;
+-text-align: center;
+-border: 1px solid #224886;
+-font-weight: bold;
+--webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+--moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+-vertical-align: middle;
+-" href="http://www.exoplatform.com/company/en/home" title="Reply">Reply</a> -->
+-<%
+-def buttonLabel=_ctx.appRes("Notification.button.goToContent.label");
+-def url = CONTENT_URL;
+-if (CONTENT_STATUS.equals("pending")) {
+-
+-buttonLabel = _ctx.appRes("Notification.button.reviewContent.label");
+-}
+-
+-%>
+-
+-<a target="_blank" style="
+-display: inline-block;
+-text-decoration: none;
+-font-size: 11px;
+-font-family: HelveticaNeue, Helvetica, Arial, sans-serif,serif;
+-color: #333333;
+-background-color: #f1f1f1;
+-background-image: -moz-linear-gradient(top, #ffffff, #f1f1f1);
+-background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#f1f1f1));
+-background-image: -webkit-linear-gradient(top, #ffffff, #f1f1f1);
+-background-image: -o-linear-gradient(top, #ffffff, #f1f1f1);
+-background-image: linear-gradient(to bottom, #ffffff, #f1f1f1);
+-background-repeat: repeat-x;
+-border-radius: 4px;
+--moz-border-radius: 4px;
+-padding: 5px 8px;
+-line-height: 100%;
+-text-align: center;
+-border: 1px solid #c7c7c7;
+--webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+--moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+-vertical-align: middle;
+-margin-left: 3px;
+-" href="$url" target="_blank">$buttonLabel</a>
+-</p>
+-																			</td>
+-</tr>
+-																	</table>
+-</td>
+-															</tr>
+-</table>
+-													</td>
+-</tr>
+-											</tbody>
+-</table>
+-										<br>
+-										<p style="margin: 0 0 10px; color: #999999; font-size: 13px; line-height: 18px;">
+-										   <%=_ctx.appRes("Notification.label.footer", "" + FOOTER_LINK)%>
+-										</p>
+-</td>
+-								</tr>
+-</table>
+-						</td>
+-</tr>
+-				</table>
+-
+-</td>
+-		</tr><!--end content area-->
+-<tr>
+-<td bgcolor="#456693" align="center"  style="border:1px solid #456693;">
+-<table border="0" cellpadding="0" cellspacing="0" width="92%"  style="font-size: 13px;line-height: 18px;font-family:HelveticaNeue,verdana,arial,tahoma">
+-<tr>
+-<td align="left" valign="top" style="font-family: HelveticaNeue, Helvetica, Arial, sans-serif,serif;color:#ffffff;font-size:13px;" >
+-<h3 style="text-align: center; margin: 0; padding: 10px 0;">
+-<a target="_blank" style="color: #ffffff; font-size: 13px;font-family:'HelveticaNeue Bold',arial,tahoma,serif; font-weight: bold; text-decoration: none;" href="http://www.exoplatform.com/company/en/home" title="<%=_ctx.appRes("Notification.label.CompanyName")%>">
+-<%=_ctx.appRes("Notification.label.CompanyName")%>
+-</a>
+-							</h3>
+-</td>
+-					</tr>
+-</table>
+-			</td>
+-</tr><!--end footer area-->		
+-	</table>
+diff --git a/war/src/main/webapp/WEB-INF/notification/templates/web/postUpdateStatePlugin.gtmpl b/war/src/main/webapp/WEB-INF/notification/templates/web/postUpdateStatePlugin.gtmpl
+deleted file mode 100644
+index 532ac7d..0000000
+--- a/war/src/main/webapp/WEB-INF/notification/templates/web/postUpdateStatePlugin.gtmpl
++++ /dev/null
+@@ -1,35 +0,0 @@
+-<li class="$READ clearfix" data-id="$NOTIFICATION_ID">
+-  <div class="media">
+-    <div class="avatarXSmall pull-left">
+-      <img src="$AVATAR" alt="$USER" />
+-    </div>
+-    <div class="media-body">
+-      <%
+-       String profileUrl = "<a class=\"user-name text-bold\" href=\"javascript:void(0)\">" + USER + "</a>";
+-       String creator = "<span style=\"text-decoration: none; color: #2f5e92; font-family: 'HelveticaNeue Bold', Helvetica, Arial, sans-serif\"><strong>" + CONTENT_UPDATER + "</strong></span>";
+-       def description = "";
+-
+-
+-
+-
+-       if(CONTENT_STATUS.equals("published")) {
+-       description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.published",CONTENT_TITLE,creator);
+-} else if (CONTENT_STATUS.equals("pending")) {
+-   description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.request.approval.mail",creator, CONTENT_TITLE);
+-} else if (CONTENT_STATUS.equals("approved")) {
+-   description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.approved.mail",creator, CONTENT_TITLE);
+-} else if (CONTENT_STATUS.equals("staged")) {
+-   description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.staged",CONTENT_TITLE);
+-} else {
+-   description = _ctx.appRes("Notification.message.PostUpdateStatePlugin.created",creator, CONTENT_TITLE);
+-}
+-      %>
+-      <div class="contentSmall" data-link="$CONTENT_URL">
+-        <div class="status">$description</div>
+-        <div class="content">$CONTENT_TITLE</div>
+-        <div class="lastUpdatedTime">$LAST_UPDATED_TIME</div>
+-      </div>
+-    </div>
+-  </div>
+-  <span class="remove-item" data-rest=""><i class="uiIconClose uiIconLightGray"></i></span>
+-</li>
+diff --git a/war/src/main/webapp/css/detail-page.css b/war/src/main/webapp/css/detail-page.css
+index 3c80c29..300b4a2 100644
+--- a/war/src/main/webapp/css/detail-page.css
++++ b/war/src/main/webapp/css/detail-page.css
+@@ -1,19 +1,19 @@
+-.RightBodyTDContainer .UIContainer {
++.UISingleContentViewerPortlet {
+     padding: 55px 25px;
+ }
+ 
+-.UIPresentationContainer {
++.demoPresentation {
+     background-color: white;
+     border-radius: 10px 10px 10px 10px;
+     padding: 25px;
+ }
+ 
+-.UISingleContentViewerPortlet .UIPresentationContainer .uiOptionBar {
++.UISingleContentViewerPortlet .demoPresentation .uiOptionBar {
+     margin-right: 1270px;
+     margin-left: 10px;
+ }
+ 
+-.UISingleContentViewerPortlet .UIPresentationContainer .title {
++.UISingleContentViewerPortlet .demoPresentation .title {
+     text-align: center;
+     padding: 20px;
+     font-weight: bold;
+@@ -26,18 +26,18 @@
+     margin-top: 50px;
+ }
+ 
+-.UISingleContentViewerPortlet .UIPresentationContainer .dateAndMail {
++.UISingleContentViewerPortlet .demoPresentation .dateAndMail {
+     text-align: right;
+     font-style: italic;
+     margin-left: 50px;
+     margin-right: 50px;
+ }
+ 
+-.webContentContainer {
++.demoPresentation .webContentContainer {
+     padding-top: 12px;
+     padding-bottom: 12px;
+     padding-left: 12px;
+     margin-left: 50px;
+     margin-top: 30px;
+     margin-right: 50px;
+-}
+\ No newline at end of file
++}

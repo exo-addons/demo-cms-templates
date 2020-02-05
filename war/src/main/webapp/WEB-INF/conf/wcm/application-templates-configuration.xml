@@ -102,7 +102,7 @@
 							<string>CMS LINKS Template</string>
 						</field>
 						<field name="templateName">
-							<string>cmsTemplateslinks.gtmpl</string>
+							<string>cmsTemplatesLinks.gtmpl</string>
 						</field>
 						<field name="category">
 							<string>list</string>

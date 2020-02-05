@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 
 <gatein-resources
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.gatein.org/xml/ns/gatein_resources_1_3 http://www.gatein.org/xml/ns/gatein_resources_1_3"
-	xmlns="http://www.gatein.org/xml/ns/gatein_resources_1_3">
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.gatein.org/xml/ns/gatein_resources_1_3 http://www.gatein.org/xml/ns/gatein_resources_1_3"
+		xmlns="http://www.gatein.org/xml/ns/gatein_resources_1_3">
 	<portal-skin>
-		<skin-name>${exo.skin.name}</skin-name>
-		<skin-module>customModule</skin-module>
+		<skin-name>Enterprise</skin-name>
+		<skin-module>detailPageModule</skin-module>
 		<css-path>/css/detail-page.css</css-path>
-		<css-priority>0</css-priority>
 	</portal-skin>
 
 </gatein-resources>
